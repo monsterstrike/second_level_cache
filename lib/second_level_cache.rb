@@ -58,7 +58,7 @@ module SecondLevelCache
       end
 
       def read_second_level_cache(id)
-        RecordMarshal.load(SecondLevelCache.cache_store.read(second_level_cache_key(id))) if self.second_level_cache_enabled?
+        RecordMarshal.load(self, SecondLevelCache.cache_store.read(second_level_cache_key(id))) if self.second_level_cache_enabled?
       end
 
       def expire_second_level_cache(id)
