@@ -4,10 +4,7 @@ require "second_level_cache/serializer"
 module RecordMarshal
   class << self
     def dump(record)
-      [
-        record.class.name,
-        record.attributes
-      ]
+      SecondLevelCache::Serializer.dump(record)
     end
 
     # load a cached record

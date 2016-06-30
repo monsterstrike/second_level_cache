@@ -76,7 +76,7 @@ module SecondLevelCache
 
     def write_second_level_cache
       if self.class.second_level_cache_enabled?
-        SecondLevelCache.cache_store.write(second_level_cache_key, RecordMarshal.dump(self), :expires_in => self.class.second_level_cache_options[:expires_in])
+        SecondLevelCache.cache_store.write(second_level_cache_key, RecordMarshal.dump(self), :expires_in => self.class.second_level_cache_options[:expires_in], :raw => true)
       end
     end
 
