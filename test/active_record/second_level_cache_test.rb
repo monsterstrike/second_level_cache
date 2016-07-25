@@ -3,7 +3,8 @@ require 'active_record/test_helper'
 
 class ActiveRecord::SecondLevelCacheTest < Test::Unit::TestCase
   def setup
-    @user = User.create :name => 'csdn', :email => 'test@csdn.com'
+    @user  = User.create :name => 'csdn', :email => 'test@csdn.com'
+    @user2 = User.create :name => 'osdn', :email => 'osdn@example.com'
   end
 
   def test_should_get_cache_key
@@ -15,5 +16,16 @@ class ActiveRecord::SecondLevelCacheTest < Test::Unit::TestCase
     assert_not_nil User.read_second_level_cache(@user.id)
     @user.expire_second_level_cache
     assert_nil User.read_second_level_cache(@user.id)
+  end
+
+  def test_should_read_multi
+    @user.write_second_level_cache
+    @user2.expire_second_level_cache
+    assert_nil User.read_second_level_caches(@user.id, @user2.id)[@user2.id]
+
+    @user2.write_second_level_cache
+    users = User.read_second_level_caches(@user.id, @user2.id)
+    assert_equal users[@user.id], @user
+    assert_equal users[@user2.id], @user2
   end
 end

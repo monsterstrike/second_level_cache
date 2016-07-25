@@ -61,6 +61,13 @@ module SecondLevelCache
         RecordMarshal.load(self, SecondLevelCache.cache_store.read(second_level_cache_key(id))) if self.second_level_cache_enabled?
       end
 
+      def read_second_level_caches(*ids)
+        if self.second_level_cache_enabled?
+          cache_keys = Hash[ids.map { |id| second_level_cache_key(id) }.zip(ids)]
+          SecondLevelCache.cache_store.read_multi(*cache_keys.keys).each_with_object(Hash.new) { |(cache_key, value), obj| obj[cache_keys[cache_key]] = RecordMarshal.load(self, value) }
+        end
+      end
+
       def expire_second_level_cache(id)
         SecondLevelCache.cache_store.delete(second_level_cache_key(id)) if self.second_level_cache_enabled?
       end
