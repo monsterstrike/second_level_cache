@@ -25,6 +25,12 @@ module SecondLevelCache
         @second_level_cache_options[:version] ||= 0
       end
 
+      def acts_as_cached_by_index(*keys)
+        raise ArgumentError.new("should enable acts_as_cached") unless @second_level_cache_options
+        @second_level_cache_options[:cache_indexes] ||= []
+        @second_level_cache_options[:cache_indexes] << keys.sort
+      end
+
       def second_level_cache_enabled?
         !!@second_level_cache_enabled
       end
@@ -88,6 +94,17 @@ module SecondLevelCache
     end
 
     alias update_second_level_cache write_second_level_cache
+
+    def delete_slc_index_cache
+      if self.class.second_level_cache_enabled? && self.class.second_level_cache_options.key?(:cache_indexes)
+        self.class.second_level_cache_options[:cache_indexes].each do |keys|
+          key_and_values = keys.each_with_object(Hash.new) { |key, obj| obj[key] = self.send(key) }
+          SecondLevelCache.cache_store.delete(self.class.cache_index_key(**key_and_values))
+        end
+      end
+    end
+
+    alias update_slc_index_cache delete_slc_index_cache
   end
 end
 
