@@ -34,4 +34,10 @@ class ActiveRecord::FetchByIndexTest < Test::Unit::TestCase
     review3.destroy
     assert_nil SecondLevelCache.cache_store.read(Review.cache_index_key(user_id: @user.id))
   end
+
+  def test_fetch_by_index_without_record
+    SecondLevelCache.cache_store.clear
+    reviews = Review.fetch_by_index(user_id: @user.id + 1)
+    assert_equal reviews.size, 0
+  end
 end
