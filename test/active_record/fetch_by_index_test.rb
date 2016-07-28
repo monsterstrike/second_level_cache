@@ -40,4 +40,18 @@ class ActiveRecord::FetchByIndexTest < Test::Unit::TestCase
     reviews = Review.fetch_by_index(user_id: @user.id + 1)
     assert_equal reviews.size, 0
   end
+
+  def test_raise_error_if_not_using_index
+    assert_raise(ArgumentError) do
+      Review.acts_as_cached_by_index(:title)
+    end
+
+    assert_raise(ArgumentError) do
+      Review.acts_as_cached_by_index(:user_id, :book_id, :title)
+    end
+
+    assert_raise(ArgumentError) do
+      Review.acts_as_cached_by_index(:book_id, :user_id)
+    end
+  end
 end

@@ -27,6 +27,10 @@ module SecondLevelCache
 
       def acts_as_cached_by_index(*keys)
         raise ArgumentError.new("should enable acts_as_cached") unless @second_level_cache_options
+        if self.connection.table_exists?(self.table_name) && not_exists_index?(keys)
+          raise ArgumentError
+        end
+
         @second_level_cache_options[:cache_indexes] ||= []
         @second_level_cache_options[:cache_indexes] << keys.sort
       end
@@ -76,6 +80,21 @@ module SecondLevelCache
 
       def expire_second_level_cache(id)
         SecondLevelCache.cache_store.delete(second_level_cache_key(id)) if self.second_level_cache_enabled?
+      end
+
+      private
+
+      def exists_index?(keys)
+        stringify_keys = keys.map(&:to_s)
+        self.connection.indexes(self.table_name).map(&:columns).any? do |cols|
+          next false if cols.size < keys.size
+          zipped = cols.zip(stringify_keys)
+          zipped.all? { |x| x[0] == x[1] || x[1].nil? }
+        end
+      end
+
+      def not_exists_index?(keys)
+        !exists_index?(keys)
       end
     end
 
