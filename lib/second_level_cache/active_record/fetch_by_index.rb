@@ -25,7 +25,7 @@ module SecondLevelCache
       end
 
       def cache_index_key(kv)
-        "#{SecondLevelCache.cache_key_prefix}/#{self.name.downcase}/fbi/#{kv.keys.sort.join(':')}/#{kv.values_at(kv.keys.sort).join(':')}"
+        "#{SecondLevelCache.cache_key_prefix}/#{self.name.downcase}/fbi/#{kv.keys.sort.join(':')}/#{kv.values_at(*kv.keys.sort).join(':')}"
       end
     end
   end
