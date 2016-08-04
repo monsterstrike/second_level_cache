@@ -11,4 +11,5 @@
 *.sqlite3
 *.swp
 *.swo
+/vendor
 
