@@ -25,6 +25,16 @@ module SecondLevelCache
         @second_level_cache_options[:version] ||= 0
       end
 
+      def acts_as_cached_by_index(*keys)
+        raise ArgumentError.new("Not enabled acts_as_cached") unless @second_level_cache_options
+        if self.connection.table_exists?(self.table_name) && not_exists_index?(keys)
+          raise ArgumentError.new("not using index or covering index")
+        end
+
+        @second_level_cache_options[:cache_indexes] ||= []
+        @second_level_cache_options[:cache_indexes] << keys.sort
+      end
+
       def second_level_cache_enabled?
         !!@second_level_cache_enabled
       end
@@ -61,8 +71,30 @@ module SecondLevelCache
         RecordMarshal.load(self, SecondLevelCache.cache_store.read(second_level_cache_key(id))) if self.second_level_cache_enabled?
       end
 
+      def read_second_level_caches(*ids)
+        if self.second_level_cache_enabled?
+          cache_keys = Hash[ids.map { |id| second_level_cache_key(id) }.zip(ids)]
+          SecondLevelCache.cache_store.read_multi(*cache_keys.keys).each_with_object(Hash.new) { |(cache_key, value), obj| obj[cache_keys[cache_key]] = RecordMarshal.load(self, value) }
+        end
+      end
+
       def expire_second_level_cache(id)
         SecondLevelCache.cache_store.delete(second_level_cache_key(id)) if self.second_level_cache_enabled?
+      end
+
+      private
+
+      def exists_index?(keys)
+        stringify_keys = keys.map(&:to_s)
+        self.connection.indexes(self.table_name).map(&:columns).any? do |cols|
+          next false if cols.size < keys.size
+          zipped = cols.zip(stringify_keys)
+          zipped.all? { |x| x[0] == x[1] || x[1].nil? }
+        end
+      end
+
+      def not_exists_index?(keys)
+        !exists_index?(keys)
       end
     end
 
@@ -81,6 +113,17 @@ module SecondLevelCache
     end
 
     alias update_second_level_cache write_second_level_cache
+
+    def delete_slc_index_cache
+      if self.class.second_level_cache_enabled? && self.class.second_level_cache_options.key?(:cache_indexes)
+        self.class.second_level_cache_options[:cache_indexes].each do |keys|
+          key_and_values = keys.each_with_object(Hash.new) { |key, obj| obj[key] = self.send(key) }
+          SecondLevelCache.cache_store.delete(self.class.cache_index_key(**key_and_values))
+        end
+      end
+    end
+
+    alias update_slc_index_cache delete_slc_index_cache
   end
 end
 
