@@ -26,9 +26,9 @@ module SecondLevelCache
       end
 
       def acts_as_cached_by_index(*keys)
-        raise ArgumentError.new("should enable acts_as_cached") unless @second_level_cache_options
+        raise ArgumentError.new("Not enabled acts_as_cached") unless @second_level_cache_options
         if self.connection.table_exists?(self.table_name) && not_exists_index?(keys)
-          raise ArgumentError
+          raise ArgumentError.new("not using index or covering index")
         end
 
         @second_level_cache_options[:cache_indexes] ||= []
