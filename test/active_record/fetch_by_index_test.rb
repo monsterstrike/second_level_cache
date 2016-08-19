@@ -56,7 +56,7 @@ class ActiveRecord::FetchByIndexTest < Test::Unit::TestCase
   end
 
   def test_cache_index_key
-    assert_equal Review.cache_index_key(user_id: @user.id), "slc/review/fbi/user_id/#{@user.id}"
-    assert_equal Review.cache_index_key(user_id: @user.id, book_id: 1), "slc/review/fbi/book_id:user_id/1:#{@user.id}"
+    assert_equal Review.cache_index_key(user_id: @user.id), "slc/review/fbi/user_id/#{@user.id}/1"
+    assert_equal Review.cache_index_key(user_id: @user.id, book_id: 1), "slc/review/fbi/book_id:user_id/1:#{@user.id}/1"
   end
 end
