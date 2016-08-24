@@ -7,7 +7,7 @@ module SecondLevelCache
         ids = SecondLevelCache.cache_store.read(cache_index_key(argv))
         unless ids
           ids = self.where(**argv).pluck(primary_key)
-          SecondLevelCache.cache_store.write(cache_index_key(argv), ids)
+          SecondLevelCache.cache_store.write(cache_index_key(argv), ids, expires_in: self.second_level_cache_options[:expires_in])
         end
         return [] unless ids.present?
 
