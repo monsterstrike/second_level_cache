@@ -10,7 +10,7 @@ module SecondLevelCache
           self.find(_id) rescue nil
         else
           record = self.where(where_values).first
-          record.tap{|record| SecondLevelCache.cache_store.write(cache_key, record.id)} if record
+          record.tap{|record| SecondLevelCache.cache_store.write(cache_key, record.id, expires_in: self.second_level_cache_options[:expires_in])} if record
         end
       end
 
