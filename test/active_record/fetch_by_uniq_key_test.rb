@@ -45,4 +45,10 @@ class FetchByUinqKeyTest < ActiveSupport::TestCase
     user = User.fetch_by_uniq_key(@user.name, :name)
     assert_equal user, @user
   end
+
+  def test_raise_error_if_not_using_slc
+    assert_raises(ArgumentError) do
+      Group.fetch_by_uniq_keys(user_id: 1)
+    end
+  end
 end
