@@ -8,11 +8,11 @@ class FetchByUinqKeyTest < ActiveSupport::TestCase
   end
 
   def test_cache_uniq_key
-    assert_equal User.send(:cache_uniq_key, { :name => "hooopo" } ), "uniq_key_User_name_hooopo"
-    assert_equal User.send(:cache_uniq_key, { :foo => 1, :bar => 2 } ), "uniq_key_User_foo_1,bar_2"
-    assert_equal User.send(:cache_uniq_key, { :foo => 1, :bar => nil } ), "uniq_key_User_foo_1,bar_"
+    assert_equal User.send(:cache_uniq_key, { :name => "hooopo" } ), "slc/user/fbu/name_hooopo/3"
+    assert_equal User.send(:cache_uniq_key, { :foo => 1, :bar => 2 } ), "slc/user/fbu/foo_1,bar_2/3"
+    assert_equal User.send(:cache_uniq_key, { :foo => 1, :bar => nil } ), "slc/user/fbu/foo_1,bar_/3"
     long_val = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    assert_equal User.send(:cache_uniq_key, { :foo => 1, :bar => long_val } ), "uniq_key_User_foo_1,bar_#{Digest::MD5.hexdigest(long_val)}"
+    assert_equal User.send(:cache_uniq_key, { :foo => 1, :bar => long_val } ), "slc/user/fbu/foo_1,bar_#{Digest::MD5.hexdigest(long_val)}/3"
   end
 
   def test_should_query_from_db_using_primary_key
