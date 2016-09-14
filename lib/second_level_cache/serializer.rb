@@ -1,6 +1,8 @@
 require "msgpack"
 
 module SecondLevelCache
+  class MismatchSchemaError < StandardError; end
+
   class Serializer
     SERIALIZER_VERSION = 1
     # FIXME: update msgpack to 0.7 or higher
@@ -63,6 +65,8 @@ module SecondLevelCache
       end
 
       def load_v1(klass, loaded)
+        raise MismatchSchemaError.new("mismatch column count. Probably forget changing cache version?") unless loaded.size == sorted_columns(klass).size
+
         obj = Hash[sorted_columns(klass).zip(loaded)]
         types = klass.columns_hash
         obj.each do |key, value|
