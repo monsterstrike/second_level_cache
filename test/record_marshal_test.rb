@@ -40,4 +40,12 @@ class RecordMarshalTest < Test::Unit::TestCase
     @user.write_second_level_cache
     assert_empty User.read_second_level_cache(@user.id).association_cache
   end
+
+  def test_raise_error_if_mismatch_colum
+    dumped = MessagePack.dump(MessagePack.load(RecordMarshal.dump(@user))[0..2])
+    SecondLevelCache.cache_store.write(@user.second_level_cache_key, dumped, :raw => true)
+    assert_raise(SecondLevelCache::MismatchSchemaError) do
+      User.find(@user.id)
+    end
+  end
 end
