@@ -4,6 +4,8 @@ require 'active_record/test_helper'
 class ActiveRecord::BaseTest < Test::Unit::TestCase
   def setup
     @user = User.create :name => 'csdn', :email => 'test@csdn.com'
+    book = Book.create(title: "book title", body: "book body")
+    @score = Score.create(book: book)
   end
 
   def test_should_update_cache_when_update_attributes
@@ -27,5 +29,10 @@ class ActiveRecord::BaseTest < Test::Unit::TestCase
     assert_nil User.read_second_level_cache(@user.id)
     user = User.find(@user.id)
     assert_equal user.books_count, @user.books_count + 1
+  end
+
+  def test_should_not_update_cache_when_set_expire_only
+    @score.update_attributes(score: 10)
+    assert_nil Score.read_second_level_cache(@score.id)
   end
 end
