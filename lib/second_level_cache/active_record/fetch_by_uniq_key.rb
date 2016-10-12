@@ -4,6 +4,7 @@ module SecondLevelCache
     module FetchByUniqKey
       def fetch_by_uniq_keys(where_values)
         raise ArgumentError unless self.second_level_cache_enabled?
+        raise ArgumentError if self.second_level_cache_expire_only?
 
         cache_key = cache_uniq_key(where_values)
         if _id = SecondLevelCache.cache_store.read(cache_key)

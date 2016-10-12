@@ -3,6 +3,7 @@ module SecondLevelCache
     module FetchByIndex
       def fetch_by_index(**argv)
         raise ArgumentError unless self.second_level_cache_enabled?
+        raise ArgumentError if self.second_level_cache_expire_only?
         raise ArgumentError unless self.second_level_cache_options[:cache_indexes].include?(argv.keys.sort)
         ids = SecondLevelCache.cache_store.read(cache_index_key(argv))
         unless ids
