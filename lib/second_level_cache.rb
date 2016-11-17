@@ -23,6 +23,7 @@ module SecondLevelCache
         @second_level_cache_options = options
         @second_level_cache_options[:expires_in] ||= 1.week
         @second_level_cache_options[:version] ||= 0
+        @second_level_cache_options[:expire_only] ||= false
       end
 
       def acts_as_cached_by_index(*keys)
@@ -37,6 +38,10 @@ module SecondLevelCache
 
       def second_level_cache_enabled?
         !!@second_level_cache_enabled
+      end
+
+      def second_level_cache_expire_only?
+        !!@second_level_cache_options[:expire_only]
       end
 
       def without_second_level_cache
@@ -68,18 +73,22 @@ module SecondLevelCache
       end
 
       def read_second_level_cache(id)
-        RecordMarshal.load(self, SecondLevelCache.cache_store.read(second_level_cache_key(id))) if self.second_level_cache_enabled?
+        if self.second_level_cache_enabled? && !self.second_level_cache_expire_only?
+          RecordMarshal.load(self, SecondLevelCache.cache_store.read(second_level_cache_key(id)))
+        end
       end
 
       def read_second_level_caches(*ids)
-        if self.second_level_cache_enabled?
+        if self.second_level_cache_enabled? && !self.second_level_cache_expire_only?
           cache_keys = Hash[ids.map { |id| second_level_cache_key(id) }.zip(ids)]
           SecondLevelCache.cache_store.read_multi(*cache_keys.keys).each_with_object(Hash.new) { |(cache_key, value), obj| obj[cache_keys[cache_key]] = RecordMarshal.load(self, value) }
         end
       end
 
       def expire_second_level_cache(id)
-        SecondLevelCache.cache_store.delete(second_level_cache_key(id)) if self.second_level_cache_enabled?
+        if self.second_level_cache_enabled?
+          SecondLevelCache.cache_store.delete(second_level_cache_key(id))
+        end
       end
 
       private
@@ -103,11 +112,13 @@ module SecondLevelCache
     end
 
     def expire_second_level_cache
-      SecondLevelCache.cache_store.delete(second_level_cache_key) if self.class.second_level_cache_enabled?
+      if self.class.second_level_cache_enabled?
+        SecondLevelCache.cache_store.delete(second_level_cache_key)
+      end
     end
 
     def write_second_level_cache
-      if self.class.second_level_cache_enabled?
+      if self.class.second_level_cache_enabled? && !self.class.second_level_cache_expire_only?
         SecondLevelCache.cache_store.write(second_level_cache_key, RecordMarshal.dump(self), :expires_in => self.class.second_level_cache_options[:expires_in], :raw => true)
       end
     end

@@ -27,6 +27,7 @@ module SecondLevelCache
       #     Article.where("user_id = 1 AND ...").find(params[:id])
       def find_one_with_second_level_cache(id)
         return find_one_without_second_level_cache(id) unless second_level_cache_enabled?
+        return find_one_without_second_level_cache(id) if second_level_cache_expire_only?
         return find_one_without_second_level_cache(id) unless select_all_column?
 
         id = id.id if ActiveRecord::Base === id
@@ -52,6 +53,7 @@ module SecondLevelCache
       # TODO cache find_or_create_by_id
       def find_by_attributes_with_second_level_cache(match, attributes, *args)
         return find_by_attributes_without_second_level_cache(match, attributes, *args) unless second_level_cache_enabled?
+        return find_by_attributes_without_second_level_cache(match, attributes, *args) if second_level_cache_expire_only?
         return find_by_attributes_without_second_level_cache(match, attributes, *args) unless select_all_column?
 
         conditions = Hash[attributes.map {|a| [a, args[attributes.index(a)]]}]
