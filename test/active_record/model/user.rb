@@ -15,4 +15,31 @@ class User < ActiveRecord::Base
 
   has_many :books
   has_many :images, :as => :imagable
+
+  def self.find_alice
+    User.where(name: "alice").first
+  end
+  method_cache :find_alice
+
+  def self.find_by_name(name)
+    User.where(name: name).first
+  end
+  method_cache :find_by_name
+
+  def find_carol
+    User.where(name: "carol").first
+  end
+  method_cache :find_carol
+
+  def find_myself
+    User.where(name: self.name).first
+  end
+  method_cache :find_myself, with_attr: %i{name}
+
+  class << self
+    def find_bob
+      User.where(name: "bob").first
+    end
+    User.method_cache :find_bob
+  end
 end
