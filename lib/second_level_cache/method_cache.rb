@@ -39,11 +39,6 @@ module SecondLevelCache
           raise ArgumentError unless self.second_level_cache_enabled?
           begin
             original_method = method(symbol)
-            if original_method.arity > 0
-              args = [1]
-            else
-              args = []
-            end
             singleton_class.send(:define_method, symbol) do |*args|
               SecondLevelCache::MethodCache.cache_return_value(self, symbol, args, original_method)
             end
