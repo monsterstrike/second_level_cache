@@ -1,10 +1,10 @@
 module SecondLevelCache
   class MethodCache
-    def self.cache_return_value(klass, symbol, args, original_method)
+    def self.cache_return_value_with_class_method(klass, symbol, args, original_method)
       value = SecondLevelCache.cache_store.read(klass.method_cache_key(symbol, *args))
       if value.nil?
         res = if args.size > 0
-                original_method.call(args)
+                original_method.call(*args)
               else
                 original_method.call
               end
@@ -24,7 +24,11 @@ module SecondLevelCache
 
       value = SecondLevelCache.cache_store.read(instance.class.method_cache_key(symbol, *key_additional))
       if value.nil?
-        res = original_method.bind(instance).call
+        res = if args.size > 0
+                original_method.bind(instance).call(*args)
+              else
+                original_method.bind(instance).call
+              end
         SecondLevelCache.cache_store.write(instance.class.method_cache_key(symbol, *key_additional), res)
       else
         value
@@ -40,7 +44,7 @@ module SecondLevelCache
           begin
             original_method = method(symbol)
             singleton_class.send(:define_method, symbol) do |*args|
-              SecondLevelCache::MethodCache.cache_return_value(self, symbol, args, original_method)
+              SecondLevelCache::MethodCache.cache_return_value_with_class_method(self, symbol, args, original_method)
             end
           rescue NameError
             original_method = instance_method(symbol)
