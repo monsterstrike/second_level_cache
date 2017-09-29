@@ -59,6 +59,23 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
     end
   end
 
+  def test_method_cache_class_method_with_negative
+    User.find_frank
+    no_connection do
+      frank = User.find_frank
+      assert_nil frank
+    end
+  end
+
+  def test_method_cache_class_method_with_negative_and_value
+    User.find_negative_alice
+    no_connection do
+      alice = User.find_negative_alice
+      assert_not_nil alice
+      assert_equal alice.name, "alice"
+    end
+  end
+
   def test_method_cache_instance_method
     alice = User.find_alice
     alice.find_carol
@@ -66,6 +83,27 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
       b = alice.find_carol
       assert_not_nil b
       assert_equal b.name, "carol"
+    end
+  end
+
+  def test_method_cache_instance_method_with_negative
+    alice = User.find_alice
+    alice.find_eve
+
+    no_connection do
+      f = alice.find_eve
+      assert_nil f
+    end
+  end
+
+  def test_method_cache_instance_method_with_negative_and_value
+    alice = User.find_alice
+    alice.find_negative_carol
+
+    no_connection do
+      carol = alice.find_negative_carol
+      assert_not_nil carol
+      assert_equal carol.name, "carol"
     end
   end
 

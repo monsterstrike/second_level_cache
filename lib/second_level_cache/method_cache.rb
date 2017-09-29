@@ -2,7 +2,8 @@ module SecondLevelCache
   class MethodCache
     def self.cache_return_value_with_class_method(klass, symbol, args, opt, original_method)
       value = SecondLevelCache.cache_store.read(klass.method_cache_key(symbol, *args))
-      return value unless value.nil?
+      return value.first if value.present? && opt.key?(:negative) && opt[:negative]
+      return value if value.present?
 
       res = if args.size > 0
               original_method.call(*args)
@@ -15,7 +16,11 @@ module SecondLevelCache
                 else
                   klass.second_level_cache_options[:expires_in]
                 end
-      SecondLevelCache.cache_store.write(klass.method_cache_key(symbol, *args), res, expires_in: expires)
+      value = res
+      if opt.key?(:negative) && opt[:negative]
+        value = [value]
+      end
+      SecondLevelCache.cache_store.write(klass.method_cache_key(symbol, *args), value, expires_in: expires)
       res
     end
 
@@ -28,7 +33,8 @@ module SecondLevelCache
       end
 
       value = SecondLevelCache.cache_store.read(instance.class.method_cache_key(symbol, *key_additional))
-      return value unless value.nil?
+      return value.first if value.present? && opt.key?(:negative) && opt[:negative]
+      return value if value.present?
 
       res = if args.size > 0
               original_method.bind(instance).call(*args)
@@ -41,7 +47,11 @@ module SecondLevelCache
                 else
                   instance.class.second_level_cache_options[:expires_in]
                 end
-      SecondLevelCache.cache_store.write(instance.class.method_cache_key(symbol, *key_additional), res, expires_in: expires)
+      value = res
+      if opt.key?(:negative) && opt[:negative]
+        value = [value]
+      end
+      SecondLevelCache.cache_store.write(instance.class.method_cache_key(symbol, *key_additional), value, expires_in: expires)
       res
     end
 

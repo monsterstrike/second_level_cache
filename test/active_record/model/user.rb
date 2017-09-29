@@ -21,6 +21,16 @@ class User < ActiveRecord::Base
   end
   method_cache :find_alice
 
+  def self.find_negative_alice
+    User.where(name: "alice").first
+  end
+  method_cache :find_negative_alice, negative: true
+
+  def self.find_frank
+    User.where(name: "frank").first
+  end
+  method_cache :find_frank, negative: true
+
   def self.find_by_name(name)
     User.where(name: name).first
   end
@@ -36,10 +46,20 @@ class User < ActiveRecord::Base
   end
   method_cache :find_carol
 
+  def find_negative_carol
+    User.where(name: "carol").first
+  end
+  method_cache :find_negative_carol, negative: true
+
   def find_ellen
     User.where(name: "ellen").first
   end
   method_cache :find_ellen, expires_in: 1
+
+  def find_eve
+    User.where(name: "eve").first
+  end
+  method_cache :find_eve, with_attr: %i{name}, negative: true
 
   def find_myself
     User.where(name: self.name).first
