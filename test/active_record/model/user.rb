@@ -26,10 +26,20 @@ class User < ActiveRecord::Base
   end
   method_cache :find_by_name
 
+  def self.find_by_email(email)
+    User.where(email: email).first
+  end
+  method_cache :find_by_email, expires_in: 1
+
   def find_carol
     User.where(name: "carol").first
   end
   method_cache :find_carol
+
+  def find_ellen
+    User.where(name: "ellen").first
+  end
+  method_cache :find_ellen, expires_in: 1
 
   def find_myself
     User.where(name: self.name).first

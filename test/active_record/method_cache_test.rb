@@ -1,15 +1,17 @@
-require 'active_record/test_helper'
+require 'test_helper'
 
-class SecondLevelCache::MethodCacheTest < Test::Unit::TestCase
+class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
   def setup
     @user = User.create :name => "alice", :email => "alice@example.com"
     @bob = User.create :name => "bob", :email => "bob@example.com"
     @carol = User.create :name => "carol", :email => "carol@example.com"
+    @ellen = User.create :name => "ellen", :email => "ellen@example.com"
   end
 
   def test_method_cache_key
     assert_equal User.method_cache_key("alice"), "slc/user/mc/3/alice"
     assert_equal User.method_cache_key("alice", *[]), "slc/user/mc/3/alice"
+    assert_equal User.method_cache_key("alice", "bob"), "slc/user/mc/3/alice/bob"
   end
 
   def test_method_cache_class_method
@@ -32,6 +34,19 @@ class SecondLevelCache::MethodCacheTest < Test::Unit::TestCase
       assert_equal alice.name, "alice"
       assert_not_nil bob
       assert_equal bob.name, "bob"
+    end
+  end
+
+  def test_method_cachle_class_method_with_expires
+    User.find_by_email("alice@example.com")
+    no_connection do
+      User.find_by_email("alice@example.com")
+    end
+
+    sleep 1.5
+
+    assert_queries do
+      User.find_by_email("alice@example.com")
     end
   end
 
@@ -68,6 +83,20 @@ class SecondLevelCache::MethodCacheTest < Test::Unit::TestCase
       assert_equal alice_myself.name, "alice"
       assert_not_nil bob_myself
       assert_equal bob_myself.name, "bob"
+    end
+  end
+
+  def test_method_cache_instance_method_with_expires
+    alice = User.find_alice
+    alice.find_ellen
+    no_connection do
+      alice.find_ellen
+    end
+
+    sleep 1.5
+
+    assert_queries do
+      alice.find_ellen
     end
   end
 end
