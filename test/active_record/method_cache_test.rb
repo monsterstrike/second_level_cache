@@ -99,4 +99,18 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
       alice.find_ellen
     end
   end
+
+  def test_method_cache_instance_method_with_attr_and_expires
+    alice = User.find_alice
+    alice.find_myself_2
+    no_connection do
+      alice.find_myself_2
+    end
+
+    sleep 1.5
+
+    assert_queries do
+      alice.find_myself_2
+    end
+  end
 end

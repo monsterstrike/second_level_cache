@@ -46,6 +46,11 @@ class User < ActiveRecord::Base
   end
   method_cache :find_myself, with_attr: %i{name}
 
+  def find_myself_2
+    User.where(name: self.name).first
+  end
+  method_cache :find_myself_2, with_attr: %i{name}, expires_in: 1
+
   class << self
     def find_bob
       User.where(name: "bob").first
