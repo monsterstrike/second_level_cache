@@ -16,6 +16,11 @@ class User < ActiveRecord::Base
   has_many :books
   has_many :images, :as => :imagable
 
+  def self.get_all
+    User.all
+  end
+  method_cache :get_all, distributed: true
+
   def self.find_alice
     User.where(name: "alice").first
   end

@@ -9,9 +9,21 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
   end
 
   def test_method_cache_key
-    assert_equal User.method_cache_key("alice"), "slc/user/mc/3/alice"
-    assert_equal User.method_cache_key("alice", *[]), "slc/user/mc/3/alice"
-    assert_equal User.method_cache_key("alice", "bob"), "slc/user/mc/3/alice/bob"
+    assert_equal User.method_cache_key("alice"), ["slc/user/mc/3/alice"]
+    assert_equal User.method_cache_key("alice", *[]), ["slc/user/mc/3/alice"]
+    assert_equal User.method_cache_key("alice", "bob"), ["slc/user/mc/3/alice/bob"]
+    assert_equal User.method_cache_key("alice", distributed: true), [
+      "slc/user/mc/3/0/alice",
+      "slc/user/mc/3/1/alice",
+      "slc/user/mc/3/2/alice",
+      "slc/user/mc/3/3/alice",
+      "slc/user/mc/3/4/alice",
+      "slc/user/mc/3/5/alice",
+      "slc/user/mc/3/6/alice",
+      "slc/user/mc/3/7/alice",
+      "slc/user/mc/3/8/alice",
+      "slc/user/mc/3/9/alice",
+    ]
   end
 
   def test_method_cache_class_method
@@ -73,6 +85,14 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
       alice = User.find_negative_alice
       assert_not_nil alice
       assert_equal alice.name, "alice"
+    end
+  end
+
+  def test_method_cache_class_method_with_distributed
+    User.get_all
+    User.method_cache_key("get_all", distributed: true).each do |key|
+      v = SecondLevelCache.cache_store.read(key)
+      assert_not_nil v
     end
   end
 

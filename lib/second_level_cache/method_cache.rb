@@ -1,7 +1,7 @@
 module SecondLevelCache
   class MethodCache
     def self.cache_return_value_with_class_method(klass, symbol, args, opt, original_method)
-      value = SecondLevelCache.cache_store.read(klass.method_cache_key(symbol, *args))
+      value = fetch_cache(klass.method_cache_key(symbol, *args))
       return value.first if value.present? && opt.key?(:negative) && opt[:negative]
       return value if value.present?
 
@@ -10,17 +10,12 @@ module SecondLevelCache
             else
               original_method.call
             end
-
-      expires = if opt.key?(:expires_in)
-                  opt[:expires_in]
-                else
-                  klass.second_level_cache_options[:expires_in]
-                end
-      value = res
-      if opt.key?(:negative) && opt[:negative]
-        value = [value]
+      unless opt.key?(:expires_in)
+        opt[:expires_in] = klass.second_level_cache_options[:expires_in]
       end
-      SecondLevelCache.cache_store.write(klass.method_cache_key(symbol, *args), value, expires_in: expires)
+
+      cache_keys = klass.method_cache_key(symbol, *args, distributed: opt.fetch(:distributed, false))
+      write_cache(cache_keys, res, opt)
       res
     end
 
@@ -32,7 +27,7 @@ module SecondLevelCache
         end
       end
 
-      value = SecondLevelCache.cache_store.read(instance.class.method_cache_key(symbol, *key_additional))
+      value = fetch_cache(instance.class.method_cache_key(symbol, *key_additional))
       return value.first if value.present? && opt.key?(:negative) && opt[:negative]
       return value if value.present?
 
@@ -41,18 +36,35 @@ module SecondLevelCache
             else
               original_method.bind(instance).call
             end
-
-      expires = if opt.key?(:expires_in)
-                  opt[:expires_in]
-                else
-                  instance.class.second_level_cache_options[:expires_in]
-                end
-      value = res
-      if opt.key?(:negative) && opt[:negative]
-        value = [value]
+      unless opt.key?(:expires_in)
+        opt[:expires_in] = instance.class.second_level_cache_options[:expires]
       end
-      SecondLevelCache.cache_store.write(instance.class.method_cache_key(symbol, *key_additional), value, expires_in: expires)
+
+      cache_keys = instance.class.method_cache_key(symbol, *key_additional, distributed: opt.fetch(:distributed, false))
+      write_cache(cache_keys, res, opt)
       res
+    end
+
+    class << self
+      private
+      def fetch_cache(keys)
+        keys.shuffle.each do |key|
+          v = SecondLevelCache.cache_store.read(keys.first)
+          return v if v.present?
+        end
+
+        return nil
+      end
+
+      def write_cache(keys, value, opt)
+        if opt.key?(:negative) && opt[:negative]
+          value = [value]
+        end
+
+        keys.each do |key|
+          SecondLevelCache.cache_store.write(key, value, expires_in: opt[:expires_in])
+        end
+      end
     end
 
     module Mixin
@@ -74,8 +86,12 @@ module SecondLevelCache
           end
         end
 
-        def method_cache_key(*keys)
-          "#{SecondLevelCache.cache_key_prefix}/#{self.name.downcase}/mc/#{self.cache_version}/#{keys.join('/')}"
+        def method_cache_key(*keys, distributed: false)
+          if distributed
+            SecondLevelCache.number_of_distributed_keys.times.map { |i| method_cache_key(i, keys) }.flatten
+          else
+            ["#{SecondLevelCache.cache_key_prefix}/#{self.name.downcase}/mc/#{self.cache_version}/#{keys.join('/')}"]
+          end
         end
       end
     end
