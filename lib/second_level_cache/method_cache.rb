@@ -1,7 +1,8 @@
 module SecondLevelCache
   class MethodCache
     def self.cache_return_value_with_class_method(klass, symbol, args, opt, original_method)
-      value = fetch_cache(klass.method_cache_keys(symbol, *args, distributed: opt.fetch(:distributed, false)))
+      cache_keys = klass.method_cache_keys(symbol, *args, **opt)
+      value = fetch_cache(cache_keys)
       return value.first if value.present? && opt.key?(:negative) && opt[:negative]
       return value if value.present?
 
@@ -14,7 +15,7 @@ module SecondLevelCache
         opt[:expires_in] = klass.second_level_cache_options[:expires_in]
       end
 
-      cache_keys = klass.method_cache_keys(symbol, *args, distributed: opt.fetch(:distributed, false))
+      cache_keys = klass.method_cache_keys(symbol, *args, **opt)
       write_cache(cache_keys, res, opt)
       res
     end
@@ -27,7 +28,7 @@ module SecondLevelCache
         end
       end
 
-      value = fetch_cache(instance.class.method_cache_keys(symbol, *key_additional, distributed: opt.fetch(:distributed, false)))
+      value = fetch_cache(instance.class.method_cache_keys(symbol, *key_additional, **opt))
       return value.first if value.present? && opt.key?(:negative) && opt[:negative]
       return value if value.present?
 
@@ -40,7 +41,7 @@ module SecondLevelCache
         opt[:expires_in] = instance.class.second_level_cache_options[:expires]
       end
 
-      cache_keys = instance.class.method_cache_keys(symbol, *key_additional, distributed: opt.fetch(:distributed, false))
+      cache_keys = instance.class.method_cache_keys(symbol, *key_additional, **opt)
       write_cache(cache_keys, res, opt)
       res
     end
@@ -95,11 +96,15 @@ module SecondLevelCache
           end
         end
 
-        def method_cache_keys(*keys, distributed: false)
-          if distributed
-            SecondLevelCache.number_of_distributed_keys.times.map { |i| method_cache_keys(i, keys) }.flatten
+        def method_cache_keys(*keys, **opt)
+          if opt.key?(:distributed) && opt[:distributed]
+            opt.delete(:distributed)
+            SecondLevelCache.number_of_distributed_keys.times.map { |i| method_cache_keys("distributed", i, keys, **opt) }.flatten
           else
-            ["#{SecondLevelCache.cache_key_prefix}/#{self.name.downcase}/mc/#{self.cache_version}/#{keys.join('/')}"]
+            key_seed = []
+            key_seed << opt[:prefix] if opt.key?(:prefix)
+            key_seed << keys
+            ["#{SecondLevelCache.cache_key_prefix}/#{self.name.downcase}/mc/#{self.cache_version}/#{key_seed.flatten.join('/')}"]
           end
         end
       end

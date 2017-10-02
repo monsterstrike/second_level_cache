@@ -21,6 +21,11 @@ class User < ActiveRecord::Base
   end
   method_cache :get_all, distributed: true
 
+  def self.get_all_2
+    User.all
+  end
+  method_cache :get_all_2, prefix: "2"
+
   def self.find_alice
     User.where(name: "alice").first
   end
@@ -65,6 +70,11 @@ class User < ActiveRecord::Base
     User.where(name: "eve").first
   end
   method_cache :find_eve, with_attr: %i{name}, negative: true
+
+  def find_justin
+    User.where(name: "justin").first
+  end
+  method_cache :find_justin, prefix: "2"
 
   def find_myself
     User.where(name: self.name).first
