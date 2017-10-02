@@ -135,23 +135,6 @@ module SecondLevelCache
     end
 
     alias update_slc_index_cache delete_slc_index_cache
-
-    def delete_method_cache
-      if self.class.second_level_cache_enabled? && self.class.second_level_cache_options.key?(:method_cache)
-        self.class.second_level_cache_options[:method_cache].each do |target|
-          key_additional = []
-          if target[:opt].key?(:with_attr)
-            target[:opt][:with_attr].each do |attr|
-              key_additional << self.send(attr)
-            end
-          end
-
-          self.class.method_cache_keys(target[:symbol], *key_additional).each { |key| SecondLevelCache.cache_store.delete(key) }
-        end
-      end
-    end
-
-    alias update_method_cache delete_method_cache
   end
 end
 

@@ -26,6 +26,11 @@ class User < ActiveRecord::Base
   end
   method_cache :get_all_2, prefix: "2"
 
+  def self.get_all_3
+    User.all
+  end
+  method_cache :get_all_3, composer: lambda { "get" }
+
   def self.find_alice
     User.where(name: "alice").first
   end
@@ -46,6 +51,11 @@ class User < ActiveRecord::Base
   end
   method_cache :find_by_name, with_attr: %i{name}
 
+  def self.find_by_name_2(name)
+    User.where(name: name).first
+  end
+  method_cache :find_by_name_2, with_attr: %i{name}, composer: lambda { "by_name_2" }
+
   def self.find_by_email(email)
     User.where(email: email).first
   end
@@ -65,6 +75,11 @@ class User < ActiveRecord::Base
     User.where(name: "ellen").first
   end
   method_cache :find_ellen, expires_in: 1
+
+  def find_ellen_2
+    User.where(name: "ellen").first
+  end
+  method_cache :find_ellen_2, composer: lambda { "ellen" }
 
   def find_eve
     User.where(name: "eve").first

@@ -44,6 +44,37 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
     end
   end
 
+  def test_method_cache_class_method_using_composer_without_args
+    User.get_all_3
+    assert_no_queries do
+      User.get_all_3
+    end
+
+    User.method_cache_keys("get_all_3", "get").each do |key|
+      v = SecondLevelCache.cache_store.read(key)
+      assert_not_nil v
+    end
+  end
+
+  def test_method_cache_class_method_using_composer_with_attr
+    alice = User.find_by_name_2("alice")
+    assert_no_queries do
+      User.find_by_name_2("alice")
+    end
+
+    alice.email = "alice@example.org"
+    alice.save
+
+    assert_queries do
+      User.find_by_name_2("alice")
+    end
+
+    User.method_cache_keys("find_by_name_2", "alice", "by_name_2").each do |key|
+      v = SecondLevelCache.cache_store.read(key)
+      assert_not_nil v
+    end
+  end
+
   def test_method_cache_class_method_with_prefix
     User.get_all_2
     User.method_cache_keys("get_all_2", prefix: "2").each do |key|
@@ -141,6 +172,19 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
 
     assert_queries do
       alice.find_carol
+    end
+  end
+
+  def test_method_cache_instance_method_using_composer
+    alice = User.find_alice
+    alice.find_ellen_2
+    assert_no_queries do
+      alice.find_ellen_2
+    end
+
+    User.method_cache_keys("find_ellen_2", "ellen").each do |key|
+      v = SecondLevelCache.cache_store.read(key)
+      assert_not_nil v
     end
   end
 
