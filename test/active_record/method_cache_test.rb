@@ -8,11 +8,11 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
     @ellen = User.create :name => "ellen", :email => "ellen@example.com"
   end
 
-  def test_method_cache_key
-    assert_equal User.method_cache_key("alice"), ["slc/user/mc/3/alice"]
-    assert_equal User.method_cache_key("alice", *[]), ["slc/user/mc/3/alice"]
-    assert_equal User.method_cache_key("alice", "bob"), ["slc/user/mc/3/alice/bob"]
-    assert_equal User.method_cache_key("alice", distributed: true), [
+  def test_method_cache_keys
+    assert_equal User.method_cache_keys("alice"), ["slc/user/mc/3/alice"]
+    assert_equal User.method_cache_keys("alice", *[]), ["slc/user/mc/3/alice"]
+    assert_equal User.method_cache_keys("alice", "bob"), ["slc/user/mc/3/alice/bob"]
+    assert_equal User.method_cache_keys("alice", distributed: true), [
       "slc/user/mc/3/0/alice",
       "slc/user/mc/3/1/alice",
       "slc/user/mc/3/2/alice",
@@ -35,6 +35,16 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
     end
   end
 
+  def test_method_cache_class_method_delete_when_save
+    alice = User.find_alice
+    alice.email = "alice@exmaple.org"
+    alice.save
+
+    assert_queries do
+      User.find_alice
+    end
+  end
+
   def test_method_cache_class_method_with_args
     User.find_by_name("alice")
     User.find_by_name("bob")
@@ -46,6 +56,16 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
       assert_equal alice.name, "alice"
       assert_not_nil bob
       assert_equal bob.name, "bob"
+    end
+  end
+
+  def test_method_cache_class_method_with_args_if_delete_when_save
+    alice = User.find_by_name("alice")
+    alice.email = "alice@example.org"
+    alice.save
+
+    assert_queries do
+      User.find_by_name("alice")
     end
   end
 
@@ -90,7 +110,7 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
 
   def test_method_cache_class_method_with_distributed
     User.get_all
-    User.method_cache_key("get_all", distributed: true).each do |key|
+    User.method_cache_keys("get_all", distributed: true).each do |key|
       v = SecondLevelCache.cache_store.read(key)
       assert_not_nil v
     end
@@ -103,6 +123,17 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
       b = alice.find_carol
       assert_not_nil b
       assert_equal b.name, "carol"
+    end
+  end
+
+  def test_method_cache_instance_method_delete_when_save
+    alice = User.find_alice
+    alice.find_carol
+    alice.email = "alice@example.org"
+    alice.save
+
+    assert_queries do
+      alice.find_carol
     end
   end
 
@@ -170,5 +201,15 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
     assert_queries do
       alice.find_myself_2
     end
+  end
+
+  def test_method_cache_instance_method_delete_when_save
+    obj = User.find_alice
+    alice = obj.find_myself
+    alice.email = "alice@example.org"
+    alice.save
+
+    got = obj.find_myself
+    assert_equal got.email, "alice@example.org"
   end
 end

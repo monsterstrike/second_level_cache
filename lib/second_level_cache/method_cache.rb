@@ -1,7 +1,7 @@
 module SecondLevelCache
   class MethodCache
     def self.cache_return_value_with_class_method(klass, symbol, args, opt, original_method)
-      value = fetch_cache(klass.method_cache_key(symbol, *args))
+      value = fetch_cache(klass.method_cache_keys(symbol, *args, distributed: opt.fetch(:distributed, false)))
       return value.first if value.present? && opt.key?(:negative) && opt[:negative]
       return value if value.present?
 
@@ -14,7 +14,7 @@ module SecondLevelCache
         opt[:expires_in] = klass.second_level_cache_options[:expires_in]
       end
 
-      cache_keys = klass.method_cache_key(symbol, *args, distributed: opt.fetch(:distributed, false))
+      cache_keys = klass.method_cache_keys(symbol, *args, distributed: opt.fetch(:distributed, false))
       write_cache(cache_keys, res, opt)
       res
     end
@@ -27,7 +27,7 @@ module SecondLevelCache
         end
       end
 
-      value = fetch_cache(instance.class.method_cache_key(symbol, *key_additional))
+      value = fetch_cache(instance.class.method_cache_keys(symbol, *key_additional, distributed: opt.fetch(:distributed, false)))
       return value.first if value.present? && opt.key?(:negative) && opt[:negative]
       return value if value.present?
 
@@ -40,7 +40,7 @@ module SecondLevelCache
         opt[:expires_in] = instance.class.second_level_cache_options[:expires]
       end
 
-      cache_keys = instance.class.method_cache_key(symbol, *key_additional, distributed: opt.fetch(:distributed, false))
+      cache_keys = instance.class.method_cache_keys(symbol, *key_additional, distributed: opt.fetch(:distributed, false))
       write_cache(cache_keys, res, opt)
       res
     end
@@ -73,22 +73,31 @@ module SecondLevelCache
       module ClassMethods
         def method_cache(symbol, **opt)
           raise ArgumentError unless self.second_level_cache_enabled?
+          @second_level_cache_options[:method_cache] ||= []
+
           begin
             original_method = method(symbol)
+            if original_method.arity > 0
+              raise ArgumentError unless opt.key?(:with_attr)
+              raise ArgumentError if opt[:with_attr].size != original_method.arity
+            end
+
             singleton_class.send(:define_method, symbol) do |*args|
               SecondLevelCache::MethodCache.cache_return_value_with_class_method(self, symbol, args, opt, original_method)
             end
+            @second_level_cache_options[:method_cache] << {symbol: symbol, opt: opt}
           rescue NameError
             original_method = instance_method(symbol)
             define_method(symbol) do |*args|
               SecondLevelCache::MethodCache.cache_return_value_with_instance_method(self, symbol, args, opt, original_method)
             end
+            @second_level_cache_options[:method_cache] << {symbol: symbol, opt: opt}
           end
         end
 
-        def method_cache_key(*keys, distributed: false)
+        def method_cache_keys(*keys, distributed: false)
           if distributed
-            SecondLevelCache.number_of_distributed_keys.times.map { |i| method_cache_key(i, keys) }.flatten
+            SecondLevelCache.number_of_distributed_keys.times.map { |i| method_cache_keys(i, keys) }.flatten
           else
             ["#{SecondLevelCache.cache_key_prefix}/#{self.name.downcase}/mc/#{self.cache_version}/#{keys.join('/')}"]
           end

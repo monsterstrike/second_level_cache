@@ -39,12 +39,12 @@ class User < ActiveRecord::Base
   def self.find_by_name(name)
     User.where(name: name).first
   end
-  method_cache :find_by_name
+  method_cache :find_by_name, with_attr: %i{name}
 
   def self.find_by_email(email)
     User.where(email: email).first
   end
-  method_cache :find_by_email, expires_in: 1
+  method_cache :find_by_email, expires_in: 1, with_attr: %i{email}
 
   def find_carol
     User.where(name: "carol").first
