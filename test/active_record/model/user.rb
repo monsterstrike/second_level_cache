@@ -71,6 +71,11 @@ class User < ActiveRecord::Base
   end
   method_cache :find_by_name_3
 
+  def self.find_by_name_4(name)
+    User.where(name: name).first
+  end
+  method_cache :find_by_name_4, invalidate_old_attr: true
+
   def self.find_by_email(email)
     User.where(email: email).first
   end

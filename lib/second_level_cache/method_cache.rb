@@ -97,6 +97,25 @@ module SecondLevelCache
       end
       alias update_method_cache delete_method_cache
 
+      def delete_method_cache_after_save
+        return unless self.class.second_level_cache_enabled?
+        return unless self.class.second_level_cache_options.key?(:method_cache)
+
+        self.class.second_level_cache_options[:method_cache].each do |target|
+          next unless target[:opt].key?(:invalidate_old_attr)
+          key_additional = []
+          if target[:opt].key?(:with_attr)
+            target[:opt][:with_attr].each do |attr|
+              key_additional << self.send(attr.to_s + "_was")
+            end
+          end
+
+          keys = [target[:symbol], *key_additional]
+          self.class.method_cache_keys(*keys, **target[:opt]).each { |key| SecondLevelCache.cache_store.delete(key) }
+        end
+      end
+      alias update_method_cache_after_save delete_method_cache_after_save
+
       module ClassMethods
         def method_cache(symbol, **opt)
           raise ArgumentError unless self.second_level_cache_enabled?

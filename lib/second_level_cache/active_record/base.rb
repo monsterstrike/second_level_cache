@@ -15,6 +15,9 @@ module SecondLevelCache
         after_commit :delete_method_cache, :on => :destroy
         after_commit :update_method_cache, :on => :update
 
+        after_save :delete_method_cache_after_save, :on => :destroy
+        after_save :update_method_cache_after_save, :on => :update
+
         class << self
           alias_method_chain :update_counters, :cache
         end

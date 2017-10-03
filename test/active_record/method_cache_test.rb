@@ -91,6 +91,28 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
     assert_equal User.find_by_name_3("alice").email, "alice@example.org"
   end
 
+  def test_method_cache_class_method_with_invalidate_old_attr
+    alice = User.find_by_name_4("alice")
+
+    User.method_cache_keys("find_by_name_4", "alice").each do |key|
+      v = SecondLevelCache.cache_store.read(key)
+      assert_not_nil v
+      assert_equal v.name, "alice"
+    end
+
+    alice.name = "zoe"
+    alice.save
+
+    zoe = User.find_by_name_4("zoe")
+    assert_equal zoe.name, "zoe"
+    assert_equal zoe.email, "alice@example.com"
+
+    User.method_cache_keys("find_by_name_4", "alice").each do |key|
+      v = SecondLevelCache.cache_store.read(key)
+      assert_nil v
+    end
+  end
+
   def test_method_cache_class_method_with_prefix
     User.get_all_2
     User.method_cache_keys("get_all_2", prefix: "2").each do |key|
