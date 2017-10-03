@@ -75,6 +75,22 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
     end
   end
 
+  def test_method_cache_class_method_without_attr
+    alice = User.find_by_name_3("alice")
+    assert_no_queries do
+      User.find_by_name_3("alice")
+    end
+
+    alice.email = "alice@example.org"
+    alice.save
+
+    assert_queries do
+      User.find_by_name_3("alice")
+    end
+
+    assert_equal User.find_by_name_3("alice").email, "alice@example.org"
+  end
+
   def test_method_cache_class_method_with_prefix
     User.get_all_2
     User.method_cache_keys("get_all_2", prefix: "2").each do |key|

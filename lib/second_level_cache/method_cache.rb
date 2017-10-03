@@ -97,8 +97,10 @@ module SecondLevelCache
           begin
             original_method = method(symbol)
             if original_method.arity > 0
-              raise ArgumentError if !opt.key?(:composer) && !opt.key?(:with_attr)
               raise ArgumentError if opt.key?(:with_attr) && opt[:with_attr].size != original_method.arity
+              if !opt.key?(:with_attr)
+                opt[:with_attr] = original_method.parameters.map { |p| p[1] }
+              end
             end
 
             singleton_class.send(:define_method, symbol) do |*args|

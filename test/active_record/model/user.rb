@@ -56,6 +56,11 @@ class User < ActiveRecord::Base
   end
   method_cache :find_by_name_2, with_attr: %i{name}, composer: lambda { "by_name_2" }
 
+  def self.find_by_name_3(name)
+    User.where(name: name).first
+  end
+  method_cache :find_by_name_3
+
   def self.find_by_email(email)
     User.where(email: email).first
   end
