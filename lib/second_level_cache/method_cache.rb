@@ -4,7 +4,7 @@ module SecondLevelCache
       def cache_return_value_with_class_method(klass, symbol, args, opt, original_method)
         keys = [symbol, *args]
         cache_keys = klass.method_cache_keys(*keys, **opt)
-        value = fetch_cache(cache_keys)
+        value = fetch_cache(klass, cache_keys, opt)
         return value.first if value.present? && opt.key?(:negative) && opt[:negative]
         return value if value.present?
 
@@ -29,7 +29,8 @@ module SecondLevelCache
           end
         end
 
-        value = fetch_cache(instance.class.method_cache_keys(symbol, *key_additional, **opt))
+        cache_keys = instance.class.method_cache_keys(symbol, *key_additional, **opt)
+        value = fetch_cache(instance.class, cache_keys, opt)
         return value.first if value.present? && opt.key?(:negative) && opt[:negative]
         return value if value.present?
 
@@ -42,13 +43,12 @@ module SecondLevelCache
           opt[:expires_in] = instance.class.second_level_cache_options[:expires]
         end
 
-        cache_keys = instance.class.method_cache_keys(symbol, *key_additional, **opt)
         write_cache(cache_keys, res, opt)
         res
       end
 
       private
-      def fetch_cache(keys)
+      def fetch_cache(klass, keys, opt)
         keys.shuffle.each do |key|
           v = SecondLevelCache.cache_store.read(keys.first)
           return v if v.present?
@@ -58,6 +58,14 @@ module SecondLevelCache
       end
 
       def write_cache(keys, value, opt)
+        if opt.key?(:record_marshal) && opt[:record_marshal]
+          if value.kind_of?(Array)
+            value = value.map { |v| RecordMarshal.dump(v) }
+          else
+            opt[:raw] = true
+            value = RecordMarshal.dump(value)
+          end
+        end
         if opt.key?(:negative) && opt[:negative]
           value = [value]
         end
@@ -92,6 +100,7 @@ module SecondLevelCache
       module ClassMethods
         def method_cache(symbol, **opt)
           raise ArgumentError unless self.second_level_cache_enabled?
+          raise ArgumentError if opt.fetch(:record_marshal, false) && opt.fetch(:negative, false)
           @second_level_cache_options[:method_cache] ||= []
 
           begin

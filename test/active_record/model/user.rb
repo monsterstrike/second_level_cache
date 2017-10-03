@@ -46,6 +46,16 @@ class User < ActiveRecord::Base
   end
   method_cache :find_frank, negative: true
 
+  def self.find_dave
+    User.where(name: "dave").first
+  end
+  method_cache :find_dave, record_marshal: true
+
+  def self.find_daves
+    User.where(name: "dave").to_a
+  end
+  method_cache :find_daves, record_marshal: true
+
   def self.find_by_name(name)
     User.where(name: name).first
   end

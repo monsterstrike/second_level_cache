@@ -2,7 +2,7 @@ require 'test_helper'
 
 class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
   def setup
-    %w{alice bob carol ellen justin}.each do |name|
+    %w{alice bob carol dave ellen justin}.each do |name|
       User.create(name: name, email: "#{name}@example.com")
     end
   end
@@ -125,7 +125,7 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
 
   def test_method_cachle_class_method_with_expires
     User.find_by_email("alice@example.com")
-    no_connection do
+    assert_no_queries do
       User.find_by_email("alice@example.com")
     end
 
@@ -138,7 +138,7 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
 
   def test_method_cache_class_method_with_singleton_class
     User.find_bob
-    no_connection do
+    assert_no_queries do
       bob = User.find_bob
       assert_not_nil bob
       assert_equal bob.name, "bob"
@@ -147,7 +147,7 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
 
   def test_method_cache_class_method_with_negative
     User.find_frank
-    no_connection do
+    assert_no_queries do
       frank = User.find_frank
       assert_nil frank
     end
@@ -155,7 +155,7 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
 
   def test_method_cache_class_method_with_negative_and_value
     User.find_negative_alice
-    no_connection do
+    assert_no_queries do
       alice = User.find_negative_alice
       assert_not_nil alice
       assert_equal alice.name, "alice"
@@ -167,6 +167,34 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
     User.method_cache_keys("get_all", distributed: true).each do |key|
       v = SecondLevelCache.cache_store.read(key)
       assert_not_nil v
+    end
+  end
+
+  def test_method_cache_class_method_with_record_marshal
+    User.find_dave
+    assert_no_queries do
+      User.find_dave
+    end
+
+    User.method_cache_keys("find_dave").each do |key|
+      v = SecondLevelCache.cache_store.read(key)
+      deserialized = RecordMarshal.load(User, v)
+      assert_equal deserialized.name, "dave"
+      assert_equal deserialized.email, "dave@example.com"
+    end
+  end
+
+  def test_method_cache_class_method_with_record_marshal_and_array
+    User.find_daves
+    assert_no_queries do
+      User.find_daves
+    end
+
+    User.method_cache_keys("find_daves").each do |key|
+      value = SecondLevelCache.cache_store.read(key)
+      deserialized = value.map { |v| RecordMarshal.load(User, v) }
+      assert_equal deserialized.first.name, "dave"
+      assert_equal deserialized.first.email, "dave@example.com"
     end
   end
 
