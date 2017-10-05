@@ -220,6 +220,13 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
     end
   end
 
+  def test_method_cache_class_method_with_expire_only
+    User.find_by_name_5("alice")
+    assert_queries do
+      User.find_by_name_5("alice")
+    end
+  end
+
   def test_method_cache_instance_method
     alice = User.find_alice
     alice.find_carol
@@ -319,7 +326,7 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
   def test_method_cache_instance_method_with_attr_and_expires
     alice = User.find_alice
     alice.find_myself_2
-    no_connection do
+    assert_no_queries do
       alice.find_myself_2
     end
 
@@ -338,5 +345,13 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
 
     got = obj.find_myself
     assert_equal got.email, "alice@example.org"
+  end
+
+  def test_method_cache_instance_method_with_expire_only
+    alice = User.find_alice
+    alice.find_myself_3
+    assert_queries do
+      alice.find_myself_3
+    end
   end
 end

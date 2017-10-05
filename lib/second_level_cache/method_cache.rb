@@ -131,14 +131,19 @@ module SecondLevelCache
               end
             end
 
-            singleton_class.send(:define_method, symbol) do |*args|
-              SecondLevelCache::MethodCache.cache_return_value_with_class_method(self, symbol, args, opt, original_method)
+            unless opt.fetch(:expire_only, false)
+              singleton_class.send(:define_method, symbol) do |*args|
+                SecondLevelCache::MethodCache.cache_return_value_with_class_method(self, symbol, args, opt, original_method)
+              end
             end
             @second_level_cache_options[:method_cache] << {symbol: symbol, opt: opt}
           rescue NameError => e
             original_method = instance_method(symbol)
-            define_method(symbol) do |*args|
-              SecondLevelCache::MethodCache.cache_return_value_with_instance_method(self, symbol, args, opt, original_method)
+
+            unless opt.fetch(:expire_only, false)
+              define_method(symbol) do |*args|
+                SecondLevelCache::MethodCache.cache_return_value_with_instance_method(self, symbol, args, opt, original_method)
+              end
             end
             @second_level_cache_options[:method_cache] << {symbol: symbol, opt: opt}
           end
