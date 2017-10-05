@@ -220,7 +220,7 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
     end
   end
 
-  def test_method_cache_class_method_with_expire_only
+  def test_method_cache_class_method_with_invalidate_only
     User.find_by_name_5("alice")
     assert_queries do
       User.find_by_name_5("alice")
@@ -347,7 +347,7 @@ class SecondLevelCache::MethodCacheTest < ActiveSupport::TestCase
     assert_equal got.email, "alice@example.org"
   end
 
-  def test_method_cache_instance_method_with_expire_only
+  def test_method_cache_instance_method_with_invalidate_only
     alice = User.find_alice
     alice.find_myself_3
     assert_queries do

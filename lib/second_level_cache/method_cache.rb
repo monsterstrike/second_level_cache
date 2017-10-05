@@ -131,7 +131,7 @@ module SecondLevelCache
               end
             end
 
-            unless opt.fetch(:expire_only, false)
+            unless opt.fetch(:invalidate_only, false)
               singleton_class.send(:define_method, symbol) do |*args|
                 SecondLevelCache::MethodCache.cache_return_value_with_class_method(self, symbol, args, opt, original_method)
               end
@@ -140,7 +140,7 @@ module SecondLevelCache
           rescue NameError => e
             original_method = instance_method(symbol)
 
-            unless opt.fetch(:expire_only, false)
+            unless opt.fetch(:invalidate_only, false)
               define_method(symbol) do |*args|
                 SecondLevelCache::MethodCache.cache_return_value_with_instance_method(self, symbol, args, opt, original_method)
               end

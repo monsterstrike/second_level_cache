@@ -79,7 +79,7 @@ class User < ActiveRecord::Base
   def self.find_by_name_5(name)
     User.where(name: name).first
   end
-  method_cache :find_by_name_5, expire_only: true
+  method_cache :find_by_name_5, invalidate_only: true
 
   def self.find_by_email(email)
     User.where(email: email).first
@@ -129,7 +129,7 @@ class User < ActiveRecord::Base
   def find_myself_3
     User.where(name: self.name).first
   end
-  method_cache :find_myself_3, expire_only: true
+  method_cache :find_myself_3, invalidate_only: true
 
   class << self
     def find_bob
