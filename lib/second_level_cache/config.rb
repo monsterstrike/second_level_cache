@@ -3,7 +3,7 @@ module SecondLevelCache
   module Config
     extend self
 
-    attr_accessor :cache_store, :logger, :cache_key_prefix
+    attr_accessor :cache_store, :logger, :cache_key_prefix, :number_of_distributed_keys
 
     def cache_store
       @cache_store ||= Rails.cache if defined?(Rails)
@@ -17,6 +17,10 @@ module SecondLevelCache
 
     def cache_key_prefix
       @cache_key_prefix ||= 'slc'
+    end
+
+    def number_of_distributed_keys
+      @number_of_distributed_keys ||= 10
     end
   end
 end

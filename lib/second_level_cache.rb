@@ -9,7 +9,7 @@ module SecondLevelCache
   end
 
   class << self
-    delegate :logger, :cache_store, :cache_key_prefix, :to => Config
+    delegate :logger, :cache_store, :cache_key_prefix, :number_of_distributed_keys, :to => Config
   end
 
   module Mixin
