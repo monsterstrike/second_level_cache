@@ -8,6 +8,19 @@ module SecondLevelCache
     block_given? ? yield(Config) : Config
   end
 
+  @@second_level_cache_global_enabled = true
+
+  def self.without_second_level_cache
+    old, @@second_level_cache_global_enabled = @second_level_cache_global_enabled, false
+    yield if block_given?
+  ensure
+    @@second_level_cache_global_enabled = old
+  end
+
+  def self.enabled?
+    @@second_level_cache_global_enabled
+  end
+
   class << self
     delegate :logger, :cache_store, :cache_key_prefix, :to => Config
   end
@@ -37,7 +50,7 @@ module SecondLevelCache
       end
 
       def second_level_cache_enabled?
-        !!@second_level_cache_enabled
+        !!@second_level_cache_enabled && SecondLevelCache.enabled?
       end
 
       def second_level_cache_expire_only?
