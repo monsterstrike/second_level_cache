@@ -11,7 +11,7 @@ module SecondLevelCache
   @@second_level_cache_global_enabled = true
 
   def self.without_second_level_cache
-    old, @@second_level_cache_global_enabled = @second_level_cache_global_enabled, false
+    old, @@second_level_cache_global_enabled = @@second_level_cache_global_enabled, false
     yield if block_given?
   ensure
     @@second_level_cache_global_enabled = old
