@@ -8,17 +8,17 @@ module SecondLevelCache
     block_given? ? yield(Config) : Config
   end
 
-  @@second_level_cache_global_enabled = true
+  @@enabled = true
 
-  def self.without_second_level_cache
-    old, @@second_level_cache_global_enabled = @@second_level_cache_global_enabled, false
+  def self.without_cache
+    old, @@enabled = @@enabled, false
     yield if block_given?
   ensure
-    @@second_level_cache_global_enabled = old
+    @@enabled = old
   end
 
   def self.enabled?
-    @@second_level_cache_global_enabled
+    @@enabled
   end
 
   class << self
