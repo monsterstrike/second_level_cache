@@ -3,7 +3,7 @@ module SecondLevelCache
   module ActiveRecord
     module FetchByUniqKey
       def fetch_by_uniq_keys(where_values)
-        raise ArgumentError unless self.second_level_cache_enabled?
+        return self.where(where_values).first unless self.second_level_cache_enabled?
         raise ArgumentError if self.second_level_cache_expire_only?
 
         cache_key = cache_uniq_key(where_values)
