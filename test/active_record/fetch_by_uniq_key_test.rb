@@ -46,9 +46,17 @@ class FetchByUinqKeyTest < ActiveSupport::TestCase
     assert_equal user, @user
   end
 
-  def test_raise_error_if_not_using_slc
-    assert_raises(ArgumentError) do
-      Group.fetch_by_uniq_keys(user_id: 1)
+  def test_read_from_db_if_not_using_slc
+    group = Group.fetch_by_uniq_keys(user_id: 1)
+    assert_equal group, nil
+  end
+
+  def test_read_from_db_if_temp_disable_slc
+    Post.fetch_by_uniq_keys(:topic_id => 2, :slug => "foobar")
+    assert_sql(/SELECT\s+"posts".* FROM "posts"\s+WHERE "posts"."topic_id" = 2 AND "posts"."slug" = 'foobar' LIMIT 1/) do
+      SecondLevelCache.without_cache do
+        Post.fetch_by_uniq_keys(:topic_id => 2, :slug => "foobar")
+      end
     end
   end
 end

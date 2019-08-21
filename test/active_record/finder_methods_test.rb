@@ -41,4 +41,14 @@ class ActiveRecord::FinderMethodsTest < Test::Unit::TestCase
     end
     assert_not_equal @user.name, @from_db.name
   end
+
+  def test_without_second_level_cache_globally
+    @user.name = "NewName"
+    @user.write_second_level_cache
+    SecondLevelCache.without_cache do
+      @from_db = User.find(@user.id)
+    end
+    @from_cache = User.find(@user.id)
+    assert_not_equal @from_cache.name, @from_db.name
+  end
 end
