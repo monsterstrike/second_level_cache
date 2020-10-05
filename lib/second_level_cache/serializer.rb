@@ -44,6 +44,8 @@ module SecondLevelCache
           if types[key].type == :datetime && value.present?
             sec, min, hour, day, month, year = value.to_a
             obj[key] = [year, month, day, hour, min, sec, value.utc_offset]
+          elsif types[key].type == :date && value.present?
+            obj[key] = value.to_s
           else
             obj[key] = value
           end
@@ -69,6 +71,8 @@ module SecondLevelCache
           if types[key].type == :datetime && value.present?
             year, month, day, hour, min, sec, utc_offset = value
             obj[key] = Time.new(year, month, day, hour, min, sec, utc_offset)
+          elsif types[key].type == :date && value.present?
+            obj[key] = Date.parse(value)
           end
         end
         obj

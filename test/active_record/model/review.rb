@@ -5,6 +5,7 @@ ActiveRecord::Base.connection.create_table(:reviews, :force => true) do |t|
   t.string  :title
   t.text    :body
   t.boolean :visible
+  t.date    :visible_at
   t.timestamps
 end
 ActiveRecord::Base.connection.add_index(:reviews, %i{user_id book_id})
