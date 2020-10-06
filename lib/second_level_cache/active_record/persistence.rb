@@ -17,7 +17,9 @@ module SecondLevelCache
       end
 
       def reload_with_second_level_cache(options = nil)
-        reload_without_second_level_cache(options).tap{expire_second_level_cache}
+        self.class.without_second_level_cache do
+          reload_without_second_level_cache(options)
+        end.tap{expire_second_level_cache}
       end
 
       def touch_with_second_level_cache(name = nil)
