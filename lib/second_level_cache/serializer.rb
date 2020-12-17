@@ -39,8 +39,8 @@ module SecondLevelCache
       #end
 
       def dump(record)
-        types = record.class.columns_hash
-        obj = record.attributes.each_with_object({}) do |(key, value), obj|
+        types = cached_columns_hash(record.class)
+        obj = record.instance_variable_get(:@attributes).each_with_object({}) do |(key, value), obj|
           if types[key].type == :datetime && value.present?
             sec, min, hour, day, month, year = value.to_a
             obj[key] = [year, month, day, hour, min, sec, value.utc_offset]
@@ -77,7 +77,13 @@ module SecondLevelCache
       protected
 
       def sorted_columns(klass)
-        klass.columns.map(&:name).sort
+        @sorted_columns ||= {}
+        @sorted_columns[klass] ||= klass.columns.map(&:name).sort
+      end
+
+      def cached_columns_hash(klass)
+        @cached_columns_hash ||= {}
+        @cached_columns_hash[klass] ||= klass.columns_hash
       end
     end
   end
